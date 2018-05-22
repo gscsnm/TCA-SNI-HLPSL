@@ -1,0 +1,172 @@
+role pm2 (AR1,AC2,PM2:agent, 
+  HH:hash_func,HK:hash_func,
+  SND,RCV:channel(dy))
+played_by PM2
+def=
+local  
+ Rar1pm2,Sar1pm2,Rac2pm2,Sac2pm2:text,  
+ Rpm2ar1,Rpm2ac2:text,  
+ Hpm2ar1,Hpm2ac2:text, 
+ Uar1,Iar1,Uac2,Iac2:text, 
+ RUar1,RIar1,RUac2,RIac2:text, 
+ Kpm2ar1,Kpm2ac2:symmetric_key,  
+ PKpm2:public_key,
+ State:nat  
+const 
+ pm2_ar1_hpm2ar1,pm2_ac2_hpm2ac2,
+ pm2_ar1_rpm2ar1,pm2_ac2_rpm2ac2
+ :protocol_id
+init  
+ State := 3  
+transition  
+3. State=3/\RCV(AR1.Rar1pm2'.AC2.Rac2pm2')
+ =|>State':=6
+ /\Rpm2ar1':=new()/\Rpm2ac2':=new()
+ /\PKpm2':=new()
+ /\SND(AR1.Rpm2ar1'.AC2.Rpm2ac2'.PKpm2') 
+6. State=6/\RCV({AR1.Sar1pm2'}_PKpm2.{AC2.Sac2pm2'}_PKpm2) 
+ =|>State':= 9
+ /\Hpm2ar1':=HH(Rar1pm2.Rpm2ar1.Sar1pm2')
+ /\Hpm2ac2':=HH(Rac2pm2.Rpm2ac2.Sac2pm2')
+ /\Kpm2ar1':=HK(Rar1pm2.Rpm2ar1.Sar1pm2')
+ /\Kpm2ac2':=HK(Rac2pm2.Rpm2ac2.Sac2pm2')
+ /\witness(PM2,AR1,pm2_ar1_hpm2ar1,Hpm2ar1')
+ /\witness(PM2,AC2,pm2_ac2_hpm2ac2,Hpm2ac2')
+ /\SND({AR1.Hpm2ar1'}_inv(PKpm2).
+ {AC2.Hpm2ac2'}_inv(PKpm2)) 
+9. State=9/\RCV({AR1.Uar1'.Iar1'}_Kpm2ar1'.
+ {AC2.Uac2'.Iac2'}_Kpm2ac2')
+ =|>State':= 12
+ /\RUar1':=new()/\RIar1':=new()
+ /\RUac2':=new()/\RIac2':=new()
+ /\witness(PM2,AR1,pm2_ar1_rpm2ar1,RUac2')
+ /\witness(PM2,AC2,pm2_ac2_rpm2ac2,RUar1')
+ /\SND({AR1.RUac2'}_Kpm2ar1'.
+ {AC2.RUar1}_Kpm2ac2')
+end role
+%---------------------------------------------------------------------------------------------------------------
+role ac2 (AR1,AC2,PM2:agent, 
+  HH:hash_func,HK:hash_func,
+  SNDAR,RCVAR,SNDPM,RCVPM:channel(dy))
+played_by AC2
+def=
+local  
+ Rar1pm2,Sar1pm2,Rac2pm2,Sac2pm2:text,  
+ Rpm2ar1,Rpm2ac2:text,  
+ Hpm2ar1,Hpm2ac2:text, 
+ Uar1,Iar1,Uac2,Iac2:text, 
+ RUar1,RIar1,RUac2,RIac2:text, 
+ Kpm2ar1,Kpm2ac2:symmetric_key,  
+ PKpm2:public_key,
+ State:nat 
+const 
+ pm2_ar1_hpm2ar1,pm2_ac2_hpm2ac2,
+ pm2_ar1_rpm2ar1,pm2_ac2_rpm2ac2
+ :protocol_id
+init  
+ State := 2  
+transition  
+2. State=2/\RCVAR(AR1.Rar1pm2') 
+ =|>State':=5/\ Rac2pm2':=new()
+ /\SNDPM(AR1.Rar1pm2'.AC2.Rac2pm2') 
+5. State=2/\RCVPM(AR1.Rpm2ar1'.AC2.Rpm2ac2'.PKpm2') 
+ =|>State':= 8/\SNDAR(AR1.Rpm2ar1'.PKpm2') 
+8. State=8/\RCVAR({AR1.Sar1pm2'}_PKpm2)
+ =|>State':= 11/\ Sac2pm2':=new() /\SNDPM({AR1.Sar1pm2'}_PKpm2.{AC2.Sac2pm2'}_PKpm2) 
+11.State=11/\RCVPM({AR1.Hpm2ar1'}_inv(PKpm2).{AC2.Hpm2ac2'}_inv(PKpm2))/\Hpm2ac2'=HH(Rac2pm2.Rpm2ac2.Sac2pm2)
+ =|>State':=14
+ /\Kpm2ac2':= HK(Rac2pm2.Rpm2ac2.Sac2pm2)
+ /\request(AC2,PM2,pm2_ac2_hpm2ac2,Hpm2ac2')
+ 
+ /\secret(Hpm2ac2',sect_2,{AC2,PM2})
+ 
+ /\SNDAR({AR1.Hpm2ar1'}_inv(PKpm2)) 
+14.State=14/\RCVAR({AR1.Uar1'.Iar1'}_Kpm2ar1')
+ =|>State':= 17
+ /\Uac2':=new()/\Iac2':=new()
+ /\SNDPM({AR1.Uar1'.Iar1'}_Kpm2ar1'.
+ {AC2.Uac2'.Iac2'}_Kpm2ac2')
+17.State= 17/\RCVPM({AR1.RUac2'}_Kpm2ar1'.
+ {AC2.RUar1}_Kpm2ac2')
+ =|>State':= 20
+ /\request(AC2,PM2,pm2_ac2_rpm2ac2,RUar1')
+ /\SNDAR({AR1.RUac2'}_Kpm2ar1')
+end role
+%---------------------------------------------------------------------------------------------------------------
+role ar1 (AR1,AC2,PM2:agent, 
+  HH:hash_func,HK:hash_func,
+  SND,RCV:channel(dy))
+played_by AR1
+def=
+local  
+ Rar1pm2,Sar1pm2,Rac2pm2,Sac2pm2:text,  
+ Rpm2ar1,Rpm2ac2:text,  
+ Hpm2ar1,Hpm2ac2:text, 
+ Uar1,Iar1,Uac2,Iac2:text, 
+ RUar1,RIar1,RUac2,RIac2:text, 
+ Kpm2ar1,Kpm2ac2:symmetric_key,  
+ PKpm2:public_key,
+ State:nat 
+const 
+ pm2_ar1_hpm2ar1,pm2_ac2_hpm2ac2,
+ pm2_ar1_rpm2ar1,pm2_ac2_rpm2ac2
+ :protocol_id
+init  
+ State := 1  
+transition  
+1. State=1/\RCV(start) 
+ =|>State':=4/\ Rar1pm2':=new()/\SND(AR1.Rar1pm2') 
+4. State=4/\RCV(AR1.Rpm2ar1'.PKpm2')
+ =|>State':= 7/\ Sar1pm2':=new()/\SND({AR1.Sar1pm2'}_PKpm2) 
+7. State=7/\RCV({AR1.Hpm2ar1'}_inv(PKpm2))
+    /\Hpm2ar1'=HH(Rar1pm2.Rpm2ar1.Sar1pm2)
+ =|>State':= 10
+ /\Kpm2ar1':= HK(Rar1pm2.Rpm2ar1.Sar1pm2)
+ /\request(AR1,PM2,pm2_ar1_hpm2ar1,Hpm2ar1')
+ 
+ /\secret(Hpm2ar1',sect_1,{AR1,PM2})
+ 
+ /\Uar1':=new()/\Iar1':=new()
+ /\SND({AR1.Uar1'.Iar1'}_Kpm2ar1') 
+10.State=10/\RCV({AR1.RUac2'}_Kpm2ar1')
+ =|>State':=13
+ /\request(AR1,PM2,pm2_ar1_rpm2ar1,RUac2')
+end role
+%---------------------------------------------------------------------------------------------------------------
+role session(AR1,AC2,PM2:agent, 
+  HH:hash_func,HK:hash_func)
+def=
+local 
+S_AR1AC2,R_AR1AC2,
+S_AC2AR1,R_AC2AR1,
+S_AC2PM2,R_AC2PM2:channel (dy)
+composition
+ar1 (AR1,AC2,PM2, HH,HK,S_AR1AC2,R_AR1AC2)/\ 
+ac2 (AR1,AC2,PM2, HH,HK,S_AC2AR1,R_AC2AR1,S_AC2PM2,R_AC2PM2)/\ 
+pm2 (AR1,AC2,PM2, HH,HK,S_AC2PM2,R_AC2PM2)
+end role
+%---------------------------------------------------------------------------------------------------------------
+role environment()
+def=
+const  
+ pm2_ar1_hpm2ar1,pm2_ac2_hpm2ac2,
+ pm2_ar1_rpm2ar1,pm2_ac2_rpm2ac2,
+ sect_1,sect_2
+ :protocol_id,
+ r1,c1,m1:agent,
+ hh,hk:hash_func
+intruder_knowledge = {r1,c1,m1,hh,hk}
+composition
+session(r1,c1,m1,hh,hk)/\ 
+session(i,c1,m1,hh,hk)/\ session(r1,i,m1,hh,hk)
+end role
+%---------------------------------------------------------------------------------------------------------------
+goal
+secrecy_of sect_1, sect_2
+authentication_on pm2_ar1_hpm2ar1
+authentication_on pm2_ac2_hpm2ac2
+authentication_on pm2_ar1_rpm2ar1
+authentication_on pm2_ac2_rpm2ac2
+end goal
+%---------------------------------------------------------------------------------------------------------------
+environment()
